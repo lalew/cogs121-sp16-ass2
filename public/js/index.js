@@ -22,10 +22,14 @@
 
   var innerWidth  = width  - margin.left - margin.right;
   var innerHeight = height - margin.top  - margin.bottom;
+  var barPadding = 0.2;
 
   // TODO: Input the proper values for the scales
-  var xScale = d3.scale.ordinal().rangeRoundBands([0, 10], 0);
-  var yScale = d3.scale.linear().range([30, 0]);
+  // var xScale = d3.scale.ordinal().rangeRoundBands([0, 10], 0);
+  var xScale = d3.scale.ordinal().rangeRoundBands([0, innerWidth], barPadding);
+
+  // var yScale = d3.scale.linear().range([30, 0]);    //Range -> Pixel Space
+  var yScale = d3.scale.linear().range([innerHeight, 0]);
 
   // Define the chart
   var chart = d3
@@ -37,10 +41,12 @@
                 .attr("transform", "translate(" +  margin.left + "," + margin.right + ")");
 
   // Render the chart
-  xScale.domain(data.map(function (d){ return d.name; }));
+  xScale.domain(data.map(function (d){ return d["name"]; }));
 
   // TODO: Fix the yScale domain to scale with any ratings range
-  yScale.domain([0, 5]);
+  // yScale.domain([0, 5]);
+  // yScale.domain([0, 10]);
+  yScale.domain([0, d3.max(data, function(d){return d["rating"];})]);
 
   // Note all these values are hard coded numbers
   // TODO:
@@ -48,13 +54,19 @@
   // 2. Update the x, y, width, and height attributes to appropriate reflect this
   chart
     .selectAll(".bar")
-    .data([10, 20, 30, 40])
+    // .data([10, 20, 30, 40])
+    .data(data)
     .enter().append("rect")
     .attr("class", "bar")
-    .attr("x", function(d, i) { return i*100; })
-    .attr("width", 100)
-    .attr("y", function(d) { return 0; })
-    .attr("height", function(d) { return d*10; });
+    // .attr("x", function(d, i) { return i*100; })
+    .attr("x", function(d, i) { return xScale(d["name"]); })
+    // .attr("x", function(d, i) { return d.name; })
+    // .attr("width", 100)
+    .attr("width", xScale.rangeBand())
+    // .attr("y", function(d) { return 0; })
+    .attr("y", function(d) { return yScale(d["rating"]); })
+    // .attr("height", function(d) { return d*10; });
+    .attr("height", function(d) { return innerHeight-yScale(d["rating"]); });
 
   // Orient the x and y axis
   var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
@@ -63,11 +75,15 @@
   // TODO: Append X axis
   chart
     .append("g");
-
+  var xAxisG = chart.append("g").append("g")
+      .attr("transform", "translate(0," + innerHeight + ")");
+  xAxisG.call(xAxis);
 
   // TODO: Append Y axis
   chart
     .append("g");
+  var yAxisG = chart.append("g").append("g");
+  yAxisG.call(yAxis);
 
 
   // ASSIGNMENT PART 1B
